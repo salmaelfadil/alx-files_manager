@@ -16,11 +16,26 @@ class DBClient {
   }
 
   async nbUsers() {
-    return this.client.db().collection('users').countDocuments();
+    return this.client.db(this.database).collection('users').countDocuments();
   }
 
   async nbFiles() {
-    return this.client.db().collection('files').countDocuments();
+    return this.client.db(this.database).collection('files').countDocuments();
+  }
+
+  async usersCollection() {
+    return this.client.db(this.database).collection('users');
+  }
+
+  async filesCollection() {
+    return this.client.db(this.database).collection('files');
+  }
+
+  async createUser(email, password) {
+    await this.client.connect();
+    const users = await this.usersCollection();
+    const user = users.insertOne({ email, password });
+    return user;
   }
 }
 const dbClient = new DBClient();

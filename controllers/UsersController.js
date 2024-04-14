@@ -3,29 +3,30 @@ const dbClient = require('../utils/db');
 
 class userController {
   static async postNew(req, res) {
-    const { email } = req.body;
-    if (!email) {
-      res.status(400).json({ error: 'Missing email' });
-      res.end();
-      return;
+    try {
+	    const { email } = req.body;
+	    if (!email) {
+		    res.status(400).json({ error: 'Missing email' });
+		    return;
+	    }
+	    const { password } = req.body;
+	    if (!password) {
+		    res.status(400).json({ error: 'Missing password' });
+		    return;
+	    }
+	    const user = await (await dbClient.usersCollection()).findOne({ email });
+	    if (user) {
+		    res.status(400).json({ error: 'Already exist' });
+		    return;
+	    }
+	    const hashPass = sha1(password);
+	    const new_user = await dbClient.createUser(email, hashPass);
+	    const id = new_user.insertedId;
+	    res.status(201).json({ id, email });
+    } catch (error) {
+	  console.error(error.message);
+	  res.status(500).json({ error: 'Internal server error' });
     }
-    const { password } = req.body;
-    if (!password) {
-      res.status(400).json({ error: 'Missing password' });
-      res.end();
-      return;
-    }
-    const isThere = await dbClient.userExists(email);
-    if (isThere) {
-      res.status(400).json({ error: 'Already exist' });
-      res.end();
-      return;
-    }
-    const hashPass = sha1(password);
-    const user = await dbClient.createUser(email, hashPass);
-    const id = user.insertedId;
-    res.status(201).json({ id, email });
-    res.end();
-  }
+}
 }
 module.exports = userController;
