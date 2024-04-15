@@ -1,5 +1,7 @@
 const sha1 = require('sha1');
+const { ObjectID } = require('mongodb');
 const dbClient = require('../utils/db');
+const redisClient = require('../utils/redis');
 
 class userController {
   static async postNew(req, res) {
@@ -26,6 +28,27 @@ class userController {
     } catch (error) {
       console.error(error.message);
       res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  static async getMe(req, res) {
+    const token = await req.header('X-Token');
+    const userId = await redisClient.get(`auth_${token}`);
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+    } else {
+	    console.log('userId:', userId);
+	    console.log('userId:', userId, typeof userId);
+      try {
+	      console.log('X-Token:', await req.header('X-Token'));
+	      console.log('Redis userId:', await redisClient.get(`auth_${token}`));
+
+        const user = await dbClient.usersCollection().findOne({ _id: new ObjectID(userId.toString()) });
+        res.status(200).json({ id: userId, email: user.email });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
     }
   }
 }
