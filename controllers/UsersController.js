@@ -31,19 +31,26 @@ class userController {
     }
   }
 
-  static async getMe(req, res) {
-    const token = await req.header('X-Token');
-    const userId = await redisClient.get(`auth_${token}`);
+  static async getMe(request, response) {
+    const token = request.header('X-Token');
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
     if (!userId) {
-      res.status(401).json({ error: 'Unauthorized' });
-    } else {
-      try {
-        const user = await dbClient.usersCollection().findOne({ _id: new ObjectID(userId.toString()) });
-        res.status(200).json({ id: userId, email: user.email });
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+      console.error('User ID not found in Redis');
+      return response.status(401).json({ error: 'Unauthorized' });
+    }
+    const idObject = new ObjectID(userId);
+    try {
+      const user = await dbClient.usersCollection().findOne({ _id: idObject });
+      if (!user) {
+        console.error('User not found in MongoDB');
+        return response.status(401).json({ error: 'Unauthorized' });
       }
+      console.log('User found:', user);
+      return response.status(200).json({ id: userId, email: user.email });
+    } catch (error) {
+      console.error('Error retrieving user from MongoDB:', error);
+      return response.status(500).json({ error: 'Internal server error' });
     }
   }
 }
