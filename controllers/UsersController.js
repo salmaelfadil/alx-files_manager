@@ -37,12 +37,7 @@ class userController {
     if (!userId) {
       res.status(401).json({ error: 'Unauthorized' });
     } else {
-	    console.log('userId:', userId);
-	    console.log('userId:', userId, typeof userId);
       try {
-	      console.log('X-Token:', await req.header('X-Token'));
-	      console.log('Redis userId:', await redisClient.get(`auth_${token}`));
-
         const user = await dbClient.usersCollection().findOne({ _id: new ObjectID(userId.toString()) });
         res.status(200).json({ id: userId, email: user.email });
       } catch (error) {
