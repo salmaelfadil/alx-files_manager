@@ -34,7 +34,7 @@ class UserController {
   static async getMe(request, response) {
     const token = request.header('X-Token');
     const key = `auth_${token}`;
-    console.log('Token:', token);
+    //console.log('Token:', token);
     const userId = await redisClient.get(key);
     if (!userId) {
       //console.error('User ID not found in Redis');
