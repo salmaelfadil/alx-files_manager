@@ -3,7 +3,7 @@ const { ObjectID } = require('mongodb');
 const dbClient = require('../utils/db');
 const redisClient = require('../utils/redis');
 
-class userController {
+class UserController {
   static async postNew(req, res) {
     try {
       const { email } = req.body;
@@ -34,19 +34,16 @@ class userController {
   static async getMe(request, response) {
     const token = request.header('X-Token');
     const key = `auth_${token}`;
+    console.log('Token:', token);
     const userId = await redisClient.get(key);
     if (!userId) {
-      console.error('User ID not found in Redis');
+      //console.error('User ID not found in Redis');
       return response.status(401).json({ error: 'Unauthorized' });
     }
     const idObject = new ObjectID(userId);
     try {
-      const user = await dbClient.usersCollection().findOne({ _id: idObject });
-      if (!user) {
-        console.error('User not found in MongoDB');
-        return response.status(401).json({ error: 'Unauthorized' });
-      }
-      console.log('User found:', user);
+      const user = await (await dbClient.usersCollection()).findOne({ _id: idObject });
+      //console.log('User found:', user);
       return response.status(200).json({ id: userId, email: user.email });
     } catch (error) {
       console.error('Error retrieving user from MongoDB:', error);
@@ -54,4 +51,4 @@ class userController {
     }
   }
 }
-module.exports = userController;
+module.exports = UserController;
