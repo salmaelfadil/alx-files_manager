@@ -7,8 +7,12 @@ class DBClient {
     const database = process.env.DB_DATABASE || 'files_manager';
     const URL = `mongodb://${host}:${port}/${database}`;
 
-    this.client = new MongoClient(URL);
-    this.client.connect().catch((error) => console.log(error.message));
+    this.client = new MongoClient(URL, { useUnifiedTopology: true });
+    this.client.connect().then(() => {
+      this.db = this.client.db(`${database}`);
+    }).catch((error) => {
+      console.log(error);
+    });
   }
 
   isAlive() {

@@ -34,16 +34,16 @@ class UserController {
   static async getMe(request, response) {
     const token = request.header('X-Token');
     const key = `auth_${token}`;
-    //console.log('Token:', token);
+    // console.log('Token:', token);
     const userId = await redisClient.get(key);
     if (!userId) {
-      //console.error('User ID not found in Redis');
+      // console.error('User ID not found in Redis');
       return response.status(401).json({ error: 'Unauthorized' });
     }
     const idObject = new ObjectID(userId);
     try {
       const user = await (await dbClient.usersCollection()).findOne({ _id: idObject });
-      //console.log('User found:', user);
+      // console.log('User found:', user);
       return response.status(200).json({ id: userId, email: user.email });
     } catch (error) {
       console.error('Error retrieving user from MongoDB:', error);

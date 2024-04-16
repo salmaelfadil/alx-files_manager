@@ -4,11 +4,21 @@ import { promisify } from 'util';
 class RedisClient {
   constructor() {
     this.client = createClient();
+
     this.client.on('error', (err) => {
       console.log(err);
       this.connected = false;
     });
-    this.connected = true;
+
+    this.client.on('connect', () => {
+      // console.log('Connected to Redis');
+      this.connected = true;
+    });
+
+    this.client.on('ready', () => {
+      // console.log('Redis client is ready');
+      this.connected = true;
+    });
   }
 
   isAlive() {
@@ -16,11 +26,13 @@ class RedisClient {
   }
 
   async get(key) {
+    // await this.client.connect();
     return promisify(this.client.get).bind(this.client)(key);
   }
 
   async set(key, value, dur) {
-    await promisify(this.client.setex).bind(this.client)(key, dur, value);
+    // await this.client.connect();
+    await promisify(this.client.SETEX).bind(this.client)(key, dur, value);
   }
 
   async del(key) {
