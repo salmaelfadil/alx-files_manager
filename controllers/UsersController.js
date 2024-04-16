@@ -46,8 +46,7 @@ class UserController {
       // console.log('User found:', user);
       return response.status(200).json({ id: userId, email: user.email });
     } catch (error) {
-      console.error('Error retrieving user from MongoDB:', error);
-      return response.status(500).json({ error: 'Internal server error' });
+      return response.status(401).json({ error: 'Unauthorized' });
     }
   }
 }
