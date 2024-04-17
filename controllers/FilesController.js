@@ -33,14 +33,14 @@ class FilesController {
     }
     const isPublic = req.body.isPublic || false;
     const parentId = req.body.parentId || 0;
-let parentIdObj;    
-if (parentId) {
+    let parentIdObj;
+    if (parentId) {
       parentIdObj = new ObjectID(parentId);
       const parentExists = await (await dbClient.filesCollection()).findOne(
         { _id: parentIdObj, userId: idObj },
       );
       if (!parentExists) {
-        res.status(400).json({ error: 'parent not found' });
+        res.status(400).json({ error: 'Parent not found' });
       }
       if (parentExists.type !== 'folder') {
         res.status(400).json({ error: 'Parent is not a folder' });
