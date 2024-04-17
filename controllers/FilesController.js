@@ -139,7 +139,7 @@ class FilesController {
       }
       const files = await dbClient.collection('files').aggregate(aggData).toArray();
       const filesList = [];
-      files.forEach((item) => {
+      await files.forEach((item) => {
         const file = {
           id: item._id,
           userId: item.userId,
