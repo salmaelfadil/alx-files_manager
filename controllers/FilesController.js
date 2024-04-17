@@ -102,7 +102,7 @@ class FilesController {
         res.status(401).json({ error: 'Unauthorized' });
       }
       const fileIdObj = new ObjectID(req.params.id);
-      const file = await (await dbClient.filesConnection()).findOne({ _id: fileIdObj });
+      const file = await (await dbClient.filesCollection()).findOne({ _id: fileIdObj });
       if (!file) {
         res.status(404).json({ error: 'Not found' });
       } else {
