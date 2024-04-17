@@ -70,18 +70,18 @@ class FilesController {
         localPath,
       });
       res.status(201).json({
-        id: fileIns.insertedId, userId, name, type, isPublic, parentId,
+        id: fileIns._id, userId, name, type, isPublic, parentId,
       });
-    } else {
+    } else if (type === 'folder') {
       const fileIns = await (await dbClient.filesCollection()).insertOne({
         userId,
         name,
         type,
         isPublic,
-        parentId: parentId ? new ObjectID(parentId) : null,
+        parentId,
       });
       res.status(201).json({
-        id: fileIns.insertedId, userId, name, type, isPublic, parentId,
+	      id: fileIns._id, userId: fileIns.userId, name, type, isPublic, parentId,
       });
     }
   }
