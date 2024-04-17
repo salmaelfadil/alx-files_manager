@@ -33,8 +33,9 @@ class FilesController {
     }
     const isPublic = req.body.isPublic || false;
     const parentId = req.body.parentId || 0;
-    if (parentId) {
-      const parentIdObj = new ObjectID(parentId);
+let parentIdObj;    
+if (parentId) {
+      parentIdObj = new ObjectID(parentId);
       const parentExists = await (await dbClient.filesCollection()).findOne(
         { _id: parentIdObj, userId: idObj },
       );
@@ -50,7 +51,7 @@ class FilesController {
       const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
       const fileId = uuidv4();
       localPath = `${folderPath}/${fileId}`;
-      const buffer = (data, 'base64');
+      const buffer = Buffer.from(data, 'base64');
 
       await fs.mkdir(folderPath, { recursive: true }, (error) => {
         if (error) return res.status(400).send({ error: error.message });
@@ -65,7 +66,7 @@ class FilesController {
         name,
         type,
         isPublic,
-        parentId: parentId ? new ObjectID(parentId) : null,
+        parentId,
         localPath,
       });
       res.status(201).json({
