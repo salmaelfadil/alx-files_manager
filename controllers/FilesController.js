@@ -1,9 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
+import Queue from 'bull/lib/queue';
 
 const { ObjectID } = require('mongodb');
 const fs = require('fs');
 const dbClient = require('../utils/db');
 const redisClient = require('../utils/redis');
+
+const fileQueue = new Queue('thumbnail generation');
 
 class FilesController {
   static async postUpload(req, res) {
@@ -46,13 +49,21 @@ class FilesController {
         res.status(400).json({ error: 'Parent is not a folder' });
       }
     }
-    let localPath;
-    if (type !== 'folder') {
+    if (type === 'folder') {
+      const insFile = await (await dbClient.filesCollection()).insertOne(
+        {
+          userId, name, type, isPublic, parentId,
+        },
+      );
+      res.status(201).json({
+        id: insFile.insertedId, userId, name, type, isPublic, parentId,
+      });
+    } else {
       const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
       const fileId = uuidv4();
-      localPath = `${folderPath}/${fileId}`;
+      const parentidObj = new ObjectID(parentId);
+      const localPath = `${folderPath}/${fileId}`;
       const buffer = Buffer.from(data, 'base64');
-
       await fs.mkdir(folderPath, { recursive: true }, (error) => {
         if (error) return res.status(400).send({ error: error.message });
         return true;
@@ -61,28 +72,22 @@ class FilesController {
         if (error) return res.status(400).send({ error: error.message });
         return true;
       });
-      const fileIns = await (await dbClient.filesCollection()).insertOne({
-        userId,
-        name,
-        type,
-        isPublic,
-        parentId,
-        localPath,
-      });
-      res.status(201).json({
-        id: fileIns._id, userId, name, type, isPublic, parentId,
-      });
-    } else if (type === 'folder') {
-      const fileIns = await (await dbClient.filesCollection()).insertOne({
-        userId,
-        name,
-        type,
-        isPublic,
-        parentId,
-      });
-      res.status(201).json({
-        id: fileIns._id, userId: fileIns.userId, name, type, isPublic, parentId,
-      });
+      const insFile = await (await dbClient.filesCollection()).insertOne(
+        {
+          userId, name, type, isPublic, parentId: parentidObj, localPath,
+        },
+      );
+      if (type === 'image') {
+        const job = `Image thumbnail [${userId}-${insFile.insertedId}]`;
+        fileQueue.add({ userId, fileId: insFile.insertedId, name: job });
+        res.status(201).json(
+          {
+            id: insFile.insertedId, userId, name, type, isPublic, parentId,
+          },
+        );
+      } else {
+        res.status(401).json({ error: 'Unauthorized' });
+      }
     }
   }
 }
