@@ -81,7 +81,7 @@ class FilesController {
         parentId,
       });
       res.status(201).json({
-	      id: fileIns._id, userId: fileIns.userId, name, type, isPublic, parentId,
+        id: fileIns._id, userId: fileIns.userId, name, type, isPublic, parentId,
       });
     }
   }
