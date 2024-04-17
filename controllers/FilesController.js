@@ -90,5 +90,69 @@ class FilesController {
       }
     }
   }
+
+  static async getShow(req, res) {
+    const token = req.header('X-Token');
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+    if (userId) {
+      const idObj = new ObjectID(userId);
+      const user = await (await dbClient.usersCollection()).findOne({ _id: idObj });
+      if (!user) {
+        res.status(401).json({ error: 'Unauthorized' });
+      }
+      const fileIdObj = new ObjectID(req.params.id);
+      const file = await (await dbClient.filesConnection()).findOne({ _id: fileIdObj });
+      if (!file) {
+        res.status(404).json({ error: 'Not found' });
+      } else {
+        res.status(200).json({
+          id: file._id,
+          userId: file.userId,
+          name: file.name,
+          type: file.type,
+          isPublic: file.isPublic,
+          parentId: file.parentId,
+        });
+      }
+    }
+    res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  static async getIndex(req, res) {
+    const token = req.header('X-Token');
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+    let idObj;
+    const parentId = req.query.parentId || 0;
+    const page = req.query.page || 0;
+    if (userId) {
+      idObj = new ObjectID(userId);
+      const user = await (await dbClient.usersCollection()).findOne({ _id: idObj });
+      if (!user) {
+        res.status(401).json({ error: 'Unauthorized' });
+      }
+      const aggMatch = { $and: [{ parentId }] };
+      let aggData = [{ $match: aggMatch }, { $skip: page * 20 }, { $limit: 20 }];
+      if (parentId === 0) {
+        aggData = [{ $skip: page * 20 }, { $limit: 20 }];
+      }
+      const files = await dbClient.collection('files').aggregate(aggData).toArray();
+      const filesList = [];
+      files.forEach((item) => {
+        const file = {
+          id: item._id,
+          userId: item.userId,
+          name: item.name,
+          isPublic: item.isPublic,
+          parentId: item.parentId,
+        };
+        filesList.push(file);
+      });
+      return res.send(filesList);
+    }
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 }
+
 module.exports = FilesController;
