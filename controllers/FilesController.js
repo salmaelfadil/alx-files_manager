@@ -35,7 +35,10 @@ class FilesController {
       res.status(400).json({ error: 'Missing data' });
     }
     const isPublic = req.body.isPublic || false;
-    const parentId = req.body.parentId || 0;
+    let { parentId } = req.body;
+    if (parentId === null || parentId === undefined) {
+      parentId = 0;
+    }
     let parentIdObj;
     if (parentId) {
       parentIdObj = new ObjectID(parentId);
@@ -137,7 +140,7 @@ class FilesController {
       if (parentId === 0) {
         aggData = [{ $skip: page * 20 }, { $limit: 20 }];
       }
-      const files = await dbClient.collection('files').aggregate(aggData).toArray();
+      const files = await (await dbClient.filesCollection()).aggregate(aggData).toArray();
       const filesList = [];
       await files.forEach((item) => {
         const file = {
